@@ -2,19 +2,52 @@
 - name: 'Check mandatory variables are defined'
   assert:
     that:
-      - application_name is defined
-      - loki_url is defined
+      - restic_repository is defined
+      - restic_password is defined
+      - aws_access_key_id is defined
+      - aws_secret_access_key is defined
 
-- name: Create app container
-  docker_container:
-    name: "{{ application_name }}"
-    image: "instrumentisto/restic:0.16"
-    restart_policy: "always"
-    cleanup: true
-    pull: true
-    log_driver: "loki"
-    log_options:
-      loki-url: "{{ loki_url }}"
-      loki-batch-size: "400"
-    networks:
-      - name: "bridge"
+- name: Create the restic directory
+  file:
+    path: "{{ hostvars[inventory_hostname].working_directory }}/restic"
+    state: directory
+    mode: "0755"
+
+- name: Create the backup script
+  template:
+    src: backup.j2
+    dest: "{{ hostvars[inventory_hostname].working_directory }}/restic/backup"
+    owner: root
+    group: root
+    mode: '755'
+
+- name: Create the list-snapshots script
+  template:
+    src: restore.j2
+    dest: "{{ hostvars[inventory_hostname].working_directory }}/restic/list-snapshots"
+    owner: root
+    group: root
+    mode: '755'
+
+- name: Create the restore script
+  template:
+    src: restore.j2
+    dest: "{{ hostvars[inventory_hostname].working_directory }}/restic/restore"
+    owner: root
+    group: root
+    mode: '755'
+
+- name: Create an empty backup_targets file if it does not exist
+  file:
+    path: "{{ hostvars[inventory_hostname].working_directory }}/backup_targets"
+    state: touch
+    mode: "0644"
+
+- name: Create a backup every week
+  cron:
+    name: "backup"
+    weekday: "0"
+    minute: "3"
+    hour: "0"
+    job: "{{ hostvars[inventory_hostname].working_directory }}/restic/backup"
+    user: root

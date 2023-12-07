@@ -1,0 +1,14 @@
+#!/bin/bash
+# Set the Restic repository and AWS credentials
+export RESTIC_REPOSITORY="{{ restic_repository }}"
+export RESTIC_PASSWORD="{{ restic_password }}"
+export AWS_ACCESS_KEY_ID="{{ aws_access_key_id }}"
+export AWS_SECRET_ACCESS_KEY="{{ aws_secret_access_key }}"
+
+#!/bin/bash
+docker run --rm \
+        -e RESTIC_REPOSITORY="$RESTIC_REPOSITORY" \
+        -e RESTIC_PASSWORD="$RESTIC_PASSWORD" \
+        -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+        -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+        instrumentisto/restic snapshots --host {{ hostvars[inventory_hostname] }}

@@ -1,0 +1,28 @@
+#!/bin/bash
+# Set the Restic repository and AWS credentials
+export RESTIC_REPOSITORY="{{ restic_repository }}"
+export RESTIC_PASSWORD="{{ restic_password }}"
+export AWS_ACCESS_KEY_ID="{{ aws_access_key_id }}"
+export AWS_SECRET_ACCESS_KEY="{{ aws_secret_access_key }}"
+
+# Initialize the repository if needed
+docker run --rm \
+        -e RESTIC_REPOSITORY="$RESTIC_REPOSITORY" \
+        -e RESTIC_PASSWORD="$RESTIC_PASSWORD" \
+        -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+        -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+        instrumentisto/restic init
+
+# Loop through each line in the "backup_targets" file
+while IFS= read -r folder_path; do
+    echo "Backing up $folder_path"
+
+    # Generate the volume mount and perform the backup
+    docker run --rm -v "$folder_path:$folder_path" \
+        -e RESTIC_REPOSITORY="$RESTIC_REPOSITORY" \
+        -e RESTIC_PASSWORD="$RESTIC_PASSWORD" \
+        -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+        -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+        instrumentisto/restic backup --host {{ hostvars[inventory_hostname] }} "$folder_path"
+done < backup_targets
+curl -X POST -d '{"body":"**{{ hostvars[inventory_hostname] }}** successfully backed up using restic"}' -H "Content-Type: application/json" {{ backups_notifications_endpoint }}
