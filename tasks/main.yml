@@ -39,7 +39,7 @@
 
 - name: Create an empty backup_targets file if it does not exist
   file:
-    path: "{{ hostvars[inventory_hostname].working_directory }}/backup_targets"
+    path: "{{ hostvars[inventory_hostname].working_directory }}/restic/backup_targets"
     state: touch
     mode: "0644"
 
