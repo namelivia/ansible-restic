@@ -24,7 +24,7 @@
 
 - name: Create the list-snapshots script
   template:
-    src: restore.j2
+    src: list-snapshots.j2
     dest: "{{ hostvars[inventory_hostname].working_directory }}/restic/list-snapshots"
     owner: root
     group: root
