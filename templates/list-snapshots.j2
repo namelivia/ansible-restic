@@ -11,4 +11,4 @@ docker run --rm \
         -e RESTIC_PASSWORD="$RESTIC_PASSWORD" \
         -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
         -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-        instrumentisto/restic snapshots --host {{ hostvars[inventory_hostname] }}
+        instrumentisto/restic snapshots --host {{ inventory_hostname }}
