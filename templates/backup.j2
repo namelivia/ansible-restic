@@ -11,6 +11,9 @@ docker run --rm \
         -e RESTIC_PASSWORD="$RESTIC_PASSWORD" \
         -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
         -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+        --log-driver="loki" \
+        --log-opt loki-url="{{ loki_url }}" \
+        --log-opt loki-batch-size="400" \
         instrumentisto/restic init
 
 # Loop through each line in the "backup_targets" file
@@ -23,6 +26,9 @@ while IFS= read -r folder_path; do
         -e RESTIC_PASSWORD="$RESTIC_PASSWORD" \
         -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
         -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+        --log-driver="loki" \
+        --log-opt loki-url="{{ loki_url }}" \
+        --log-opt loki-batch-size="400" \
         instrumentisto/restic backup --host {{ inventory_hostname }} "$folder_path"
 done < backup_targets
 curl -X POST -d '{"body":"**{{ inventory_hostname }}** successfully backed up using restic"}' -H "Content-Type: application/json" {{ backups_notifications_endpoint }}
