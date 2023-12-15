@@ -53,10 +53,10 @@
     state: touch
     mode: "0644"
 
-- name: Create a backup every week
+- name: Create a backup every day
   cron:
     name: "backup"
-    weekday: "0"
+    weekday: "*"
     minute: "3"
     hour: "0"
     job: "{{ hostvars[inventory_hostname].working_directory }}/restic/backup"
