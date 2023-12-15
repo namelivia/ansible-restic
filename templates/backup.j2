@@ -17,20 +17,38 @@ docker run --rm \
         --log-opt loki-batch-size="400" \
         instrumentisto/restic init
 
-# Loop through each line in the "backup_targets" file
-while IFS= read -r folder_path; do
-    echo "Backing up $folder_path"
+# Function to perform the backup for a given target file
+perform_backup() {
+    local target_file="$1"
 
-    # Generate the volume mount and perform the backup
-    docker run --rm -v "$folder_path:$folder_path" \
-        -e RESTIC_REPOSITORY="$RESTIC_REPOSITORY" \
-        -e RESTIC_PASSWORD="$RESTIC_PASSWORD" \
-        -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
-        -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
-        --name="restic-backup" \
-        --log-driver="loki" \
-        --log-opt loki-url="{{ loki_url }}" \
-        --log-opt loki-batch-size="400" \
-        instrumentisto/restic backup --host {{ inventory_hostname }} "$folder_path"
-done < backup_targets
+    # Loop through each line in the target file
+    while IFS= read -r folder_path; do
+        echo "Backing up $folder_path"
+
+        # Generate the volume mount and perform the backup
+        docker run --rm -v "$folder_path:$folder_path" \
+            -e RESTIC_REPOSITORY="$RESTIC_REPOSITORY" \
+            -e RESTIC_PASSWORD="$RESTIC_PASSWORD" \
+            -e AWS_ACCESS_KEY_ID="$AWS_ACCESS_KEY_ID" \
+            -e AWS_SECRET_ACCESS_KEY="$AWS_SECRET_ACCESS_KEY" \
+            --name="restic-backup" \
+            --log-driver="loki" \
+            --log-opt loki-url="{{ loki_url }}" \
+            --log-opt loki-batch-size="400" \
+            instrumentisto/restic backup --host {{ inventory_hostname }} "$folder_path"
+    done < "$target_file"
+}
+
+# Run the backup for backup_targets
+if [ -f "backup_targets" ]; then
+    perform_backup "backup_targets"
+else
+    echo "backup_targets file not found."
+fi
+
+# Run the backup for initial_targets if it exists
+if [ -f "initial_targets" ]; then
+    perform_backup "initial_targets"
+fi
+
 curl -X POST -d '{"body":"**{{ inventory_hostname }}** successfully backed up using restic"}' -H "Content-Type: application/json" {{ backups_notifications_endpoint }}
